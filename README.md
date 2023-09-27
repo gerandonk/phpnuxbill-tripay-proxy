@@ -1,6 +1,6 @@
 # Payment gateway [Tripay](https://tripay.co.id/?ref=TP19304)
 
-payment gateway [Tripay](https://tripay.co.id/?ref=TP19304) untuk PHPNuxBill
+payment gateway [Tripay](https://tripay.co.id/?ref=TP19304) untuk PHPNuxBill. Menggunakan proxy, berguna untuk yang tidak punya IP static, pastikan Telegram bot aktif
 
 [Download](https://github.com/hotspotbilling/phpnuxbill-tripay/archive/refs/heads/master.zip)
 

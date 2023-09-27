@@ -171,8 +171,8 @@ function tripay_get_server()
 {
     global $_app_stage;
     if ($_app_stage == 'Live') {
-        return 'https://tripay.co.id/api/';
+        return 'https://tripay.ibnux.com/api/';
     } else {
-        return 'https://tripay.co.id/api-sandbox/';
+        return 'https://tripay.ibnux.com/api-sandbox/';
     }
 }
