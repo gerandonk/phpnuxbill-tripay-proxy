@@ -182,7 +182,41 @@ function tripay_get_status($trx, $user)
 // callback
 function tripay_payment_notification()
 {
-    // ignore it, let user check it from payment page
+    global $config;
+
+    // Retrieve the notification data
+    $json = file_get_contents('php://input');
+    $notification = json_decode($json, true);
+
+    // Verify the signature
+    $signature = hash_hmac('sha256', $json, $config['tripay_secret_key']);
+    if ($signature !== $_SERVER['HTTP_X_CALLBACK_SIGNATURE']) {
+        die('Invalid signature');
+    }
+
+    // Process the notification
+    if ($notification['status'] === 'PAID') {
+        $trx = ORM::for_table('tbl_payment_gateway')
+            ->where('gateway_trx_id', $notification['reference'])
+            ->find_one();
+
+        if ($trx && $trx['status'] != 2) {
+            $user = ORM::for_table('tbl_users')->find_one($trx['user_id']);
+
+            if (Package::rechargeUser($user['id'], $trx['routers'], $trx['plan_id'], $trx['gateway'], $notification['payment_method'])) {
+                $trx->pg_paid_response = json_encode($notification);
+                $trx->payment_method = $notification['payment_method'];
+                $trx->payment_channel = $notification['payment_method_code'];
+                $trx->paid_date = date('Y-m-d H:i:s', $notification['paid_at']);
+                $trx->trx_invoice = "INV-" . (Package::_raid() - 1);
+                $trx->status = 2;
+                $trx->save();
+
+                // You might want to add logging here
+            }
+        }
+    }
+
     die('OK');
 }
 
