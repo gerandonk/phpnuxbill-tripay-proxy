@@ -187,10 +187,15 @@ function tripay_payment_notification()
     // Retrieve the notification data
     $json = file_get_contents('php://input');
     $notification = json_decode($json, true);
+	
+	// Ambil callback signature
+	$callbackSignature = isset($_SERVER['HTTP_X_CALLBACK_SIGNATURE'])
+		? $_SERVER['HTTP_X_CALLBACK_SIGNATURE']
+		: '';
 
     // Verify the signature
     $signature = hash_hmac('sha256', $json, $config['tripay_secret_key']);
-    if ($signature !== $_SERVER['HTTP_X_CALLBACK_SIGNATURE']) {
+    if ($callbackSignature !== $signature) {
         die('Invalid signature');
     }
 
@@ -201,7 +206,7 @@ function tripay_payment_notification()
             ->find_one();
 
         if ($trx && $trx['status'] != 2) {
-            $user = ORM::for_table('tbl_users')->find_one($trx['user_id']);
+            $user = ORM::for_table('tbl_customers')->where('username', $trx['username'])->find_one();
 
             if (Package::rechargeUser($user['id'], $trx['routers'], $trx['plan_id'], $trx['gateway'], $notification['payment_method'])) {
                 $trx->pg_paid_response = json_encode($notification);
@@ -213,6 +218,9 @@ function tripay_payment_notification()
                 $trx->save();
 
                 // You might want to add logging here
+            }else{
+                Message::sendTelegram("tripay_payment_notification: Activation FAILED: \n\n" . json_encode($notification, JSON_PRETTY_PRINT));
+                $msg = 'Failed activate package';
             }
         }
     }
